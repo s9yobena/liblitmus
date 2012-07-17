@@ -20,6 +20,7 @@ TESTCASE(set_rt_task_param_invalid_params, ALL,
 	struct rt_task params;
 	params.cpu        = 0;
 	params.period     = 100;
+	params.relative_deadline = params.period;
 	params.phase      = 0;
 	params.cls        = RT_CLASS_HARD;
 	params.budget_policy = NO_ENFORCEMENT;
@@ -61,7 +62,7 @@ TESTCASE(rt_fork_non_rt, LITMUS,
 	unsigned int pid, job_no;
 	int status;
 
-	SYSCALL( sporadic_implicit_partitioned(10, 100, 0) );
+	SYSCALL( sporadic_partitioned(10, 100, 0) );
 	SYSCALL( task_mode(LITMUS_RT_TASK) );
 
 	pid = fork();
