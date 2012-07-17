@@ -41,15 +41,16 @@ int be_migrate_to(int target_cpu)
 	return sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set);
 }
 
-int sporadic_task(lt_t e, lt_t p, lt_t phase,
+int sporadic_task(lt_t e, lt_t p, lt_t d, lt_t phase,
 		  int cpu, task_class_t cls,
 		  budget_policy_t budget_policy, int set_cpu_set)
 {
-	return sporadic_task_ns(e * NS_PER_MS, p * NS_PER_MS, phase * NS_PER_MS,
+	return sporadic_task_ns(e * NS_PER_MS, p * NS_PER_MS,
+				d * NS_PER_MS, phase * NS_PER_MS,
 				cpu, cls, budget_policy, set_cpu_set);
 }
 
-int sporadic_task_ns(lt_t e, lt_t p, lt_t phase,
+int sporadic_task_ns(lt_t e, lt_t p, lt_t d, lt_t phase,
 			int cpu, task_class_t cls,
 			budget_policy_t budget_policy, int set_cpu_set)
 {
@@ -63,6 +64,7 @@ int sporadic_task_ns(lt_t e, lt_t p, lt_t phase,
 
 	param.exec_cost = e;
 	param.period    = p;
+	param.rdeadline	= (d == 0) ? p : d; /* implicit deadline if d == 0 */
 	param.cpu       = cpu;
 	param.cls       = cls;
 	param.phase	= phase;

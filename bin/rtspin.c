@@ -274,7 +274,7 @@ int main(int argc, char** argv)
 			bail_out("could not migrate to target partition");
 	}
 
-	ret = sporadic_task_ns(wcet, period, 0, cpu, class,
+	ret = sporadic_task_ns(wcet, period, 0, 0, cpu, class,
 			       want_enforcement ? PRECISE_ENFORCEMENT
 			                        : NO_ENFORCEMENT,
 			       migrate);

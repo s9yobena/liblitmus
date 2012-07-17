@@ -61,7 +61,7 @@ TESTCASE(rt_fork_non_rt, LITMUS,
 	unsigned int pid, job_no;
 	int status;
 
-	SYSCALL( sporadic_partitioned(10, 100, 0) );
+	SYSCALL( sporadic_implicit_partitioned(10, 100, 0) );
 	SYSCALL( task_mode(LITMUS_RT_TASK) );
 
 	pid = fork();

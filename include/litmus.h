@@ -31,21 +31,36 @@ int get_rt_task_param(pid_t pid, struct rt_task* param);
 
 /* times are given in ms */
 int sporadic_task(
-		lt_t e, lt_t p, lt_t phase,
+		lt_t e, lt_t p, lt_t d, lt_t phase,
 		int partition, task_class_t cls,
 		budget_policy_t budget_policy, int set_cpu_set);
 
 /* times are given in ns */
 int sporadic_task_ns(
-		lt_t e, lt_t p, lt_t phase,
+		lt_t e, lt_t p, lt_t d, lt_t phase,
 		int cpu, task_class_t cls,
 		budget_policy_t budget_policy, int set_cpu_set);
 
+/* implicit deadline macros */
+#define sporadic_implicit_task(e, p, phase, \
+				partition, cls, \
+				budget_policy, set_cpu_set) \
+	sporadic_task(e, p, 0, phase, partition, cls, budget_policy, set_cpu_set)
+#define sporadic_implicit_task_ns(e, p, phase, \
+				partition, cls, \
+				budget_policy, set_cpu_set) \
+	sporadic_task_ns(e, p, 0, phase, partition, cls, budget_policy, set_cpu_set)
+
+
 /* budget enforcement off by default in these macros */
-#define sporadic_global(e, p) \
-	sporadic_task(e, p, 0, 0, RT_CLASS_SOFT, NO_ENFORCEMENT, 0)
-#define sporadic_partitioned(e, p, cpu) \
-	sporadic_task(e, p, 0, cpu, RT_CLASS_SOFT, NO_ENFORCEMENT, 1)
+#define sporadic_global(e, p, d) \
+	sporadic_task(e, p, d, 0, 0, RT_CLASS_SOFT, NO_ENFORCEMENT, 0)
+#define sporadic_partitioned(e, p, d, cpu) \
+	sporadic_task(e, p, d, 0, cpu, RT_CLASS_SOFT, NO_ENFORCEMENT, 1)
+#define sporadic_implicit_global(e, p) \
+	sporadic_implicit_task(e, p, 0, 0, RT_CLASS_SOFT, NO_ENFORCEMENT, 0)
+#define sporadic_implicit_partitioned(e, p, cpu) \
+	sporadic_implicit_task(e, p, 0, cpu, RT_CLASS_SOFT, NO_ENFORCEMENT, 1)
 
 /* file descriptor attached shared objects support */
 typedef enum  {

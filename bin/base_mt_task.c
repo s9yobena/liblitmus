@@ -21,8 +21,9 @@
 /* Include the LITMUS^RT API.*/
 #include "litmus.h"
 
-#define PERIOD		100
-#define EXEC_COST	 10
+#define PERIOD       100
+#define REL_DEADLINE 100
+#define EXEC_COST    10
 
 /* Let's create 10 threads in the example, 
  * for a total utilization of 1.
@@ -130,7 +131,7 @@ void* rt_thread(void *tcontext)
 	 * 1) Initialize real-time settings.
 	 */
 	CALL( init_rt_thread() );
-	CALL( sporadic_global(EXEC_COST, PERIOD) );
+	CALL( sporadic_global(EXEC_COST, PERIOD, REL_DEADLINE) );
 
 	/*****
 	 * 2) Transition to real-time mode.

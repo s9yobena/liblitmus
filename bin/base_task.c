@@ -23,8 +23,9 @@
  * These are only constants for convenience in this example, they can be
  * determined at run time, e.g., from command line parameters.
  */
-#define PERIOD		100
-#define EXEC_COST	 10
+#define PERIOD       100
+#define REL_DEADLINE 100
+#define EXEC_COST    10
 
 /* Catch errors.
  */
@@ -85,7 +86,7 @@ int main(int argc, char** argv)
 	 *    to the first partition (since partitioning is performed offline).
 	 */
 	CALL( init_litmus() );
-	CALL( sporadic_global(EXEC_COST, PERIOD) );
+	CALL( sporadic_global(EXEC_COST, PERIOD, REL_DEADLINE) );
 
 	/* To specify a partition, use sporadic_partitioned().
 	 * Example:
