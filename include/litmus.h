@@ -7,12 +7,14 @@ extern "C" {
 
 #include <sys/types.h>
 #include <stdint.h>
+#include <setjmp.h>
 
 /* Include kernel header.
  * This is required for the rt_param
  * and control_page structures.
  */
 #include "litmus/rt_param.h"
+#include "litmus/signal.h"
 
 #include "asm/cycles.h" /* for null_call() */
 
@@ -138,7 +140,97 @@ int null_call(cycles_t *timestamp);
  */
 struct control_page* get_ctrl_page(void);
 
+typedef struct litmus_sigjmp
+{
+	sigjmp_buf env;
+	struct litmus_sigjmp *prev;
+} litmus_sigjmp_t;
+
+void push_sigjmp(litmus_sigjmp_t* buf);
+litmus_sigjmp_t* pop_sigjmp(void);
+
+typedef void (*litmus_sig_handler_t)(int);
+typedef void (*litmus_sig_actions_t)(int, siginfo_t *, void *);
+
+void ignore_litmus_signals(unsigned long litmus_sig_mask);
+void activate_litmus_signals(unsigned long litmus_sig_mask,
+				litmus_sig_handler_t handler);
+void activate_litmus_signal_actions(unsigned long litmus_sig_mask,
+				litmus_sig_actions_t handler);
+void block_litmus_signals(unsigned long litmus_sig_mask);
+void unblock_litmus_signals(unsigned long litmus_sig_mask);
+
+#define SIG_BUDGET_MASK			0x00000001
+/* more ... */
+#define ALL_LITMUS_SIGS_MASK	(SIG_BUDGET_MASK)
+
+#define LITMUS_TRY \
+do { \
+	litmus_sigjmp_t lit_env_##__FUNCTION__##__LINE__; \
+	push_sigjmp(&lit_env_##__FUNCTION__##__LINE__); \
+	switch( sigsetjmp(lit_env_##__FUNCTION__##__LINE__.env, 1) ) { \
+		case 0:
+
+#define LITMUS_CATCH(x) break; case (x):
+
+#define END_LITMUS_TRY \
+	} /* end switch */ \
+}
+
 #ifdef __cplusplus
 }
 #endif
+
+
+
+
+#ifdef __cplusplus
+/* Expose litmus exceptions if C++.
+ *
+ * KLUDGE: We define everything in the header since liblitmus is a C-only
+ * library, but this header could be included in C++ code.
+ */
+
+#include <exception>
+
+namespace litmus
+{
+	class litmus_exception: public std::exception
+	{
+	public:
+		litmus_exception() throw() {}
+		virtual ~litmus_exception() throw() {}
+		virtual const char* what() const throw() { return "litmus_exception";}
+	};
+
+	class sigbudget: public litmus_exception
+	{
+	public:
+		sigbudget() throw() {}
+		virtual ~sigbudget() throw() {}
+		virtual const char* what() const throw() { return "sigbudget"; }
+	};
+
+	/* Must compile your program with "non-call-exception". */
+	static void throw_on_litmus_signal(int signum) __used__
+	{
+		printf("WE GET SIGNAL! %d\n", signum);
+		/* We have to unblock the received signal to get more in the future
+		 * because we are not calling siglongjmp(), which normally restores
+		 * the mask for us.
+		 */
+		switch(signum)
+		{
+		case SIG_BUDGET:
+			unblock_litmus_signals(SIG_BUDGET_MASK);
+			throw sigbudget();
+		default:
+			; /* silently ignore */
+		}
+	}
+
+}; /* end namespace 'litmus' */
+
+#endif /* end __cplusplus */
+
 #endif
