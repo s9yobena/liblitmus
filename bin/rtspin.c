@@ -152,16 +152,28 @@ static void debug_delay_loop(void)
 
 static int job(double exec_time, double program_end)
 {
-	if (wctime() > program_end)
-		return 0;
-	else {
-		loop_for(exec_time, program_end + 1);
-		sleep_next_period();
-		return 1;
+	int exit = 0;
+	if (wctime() > program_end) {
+		exit = 1;
 	}
+	else {
+		LITMUS_TRY {
+			loop_for(exec_time, program_end + 1);
+		}
+		LITMUS_CATCH(SIG_BUDGET) {
+			printf("Exhausted budget! Finishing job NOW!\n");
+		}
+		END_LITMUS_TRY;
+	}
+
+	if (!exit) {
+		sleep_next_period();
+	}
+
+	return !exit;
 }
 
-#define OPTSTR "p:c:wlveo:f:s:"
+#define OPTSTR "p:c:wlveio:f:s:"
 
 int main(int argc, char** argv)
 {
@@ -177,6 +189,7 @@ int main(int argc, char** argv)
 	int column = 1;
 	const char *file = NULL;
 	int want_enforcement = 0;
+	int want_signals = 0;
 	double duration = 0, start;
 	double *exec_times = NULL;
 	double scale = 1.0;
@@ -201,6 +214,9 @@ int main(int argc, char** argv)
 			break;
 		case 'e':
 			want_enforcement = 1;
+			break;
+		case 'i':
+			want_signals = 1;
 			break;
 		case 'l':
 			test_loop = 1;
@@ -277,11 +293,18 @@ int main(int argc, char** argv)
 	ret = sporadic_task_ns(wcet, period, 0, cpu, class,
 			       want_enforcement ? PRECISE_ENFORCEMENT
 			                        : NO_ENFORCEMENT,
+				   want_signals ? PRECISE_SIGNALS
+				   				: NO_SIGNALS,
 			       migrate);
 	if (ret < 0)
 		bail_out("could not setup rt task params");
 
 	init_litmus();
+
+	if (want_signals) {
+		/* bind default longjmp signal handler to SIG_BUDGET. */
+		activate_litmus_signals(SIG_BUDGET_MASK, longjmp_on_litmus_signal); 
+	}
 
 	ret = task_mode(LITMUS_RT_TASK);
 	if (ret != 0)

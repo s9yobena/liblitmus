@@ -35,19 +35,23 @@ int get_rt_task_param(pid_t pid, struct rt_task* param);
 int sporadic_task(
 		lt_t e, lt_t p, lt_t phase,
 		int partition, task_class_t cls,
-		budget_policy_t budget_policy, int set_cpu_set);
+		budget_policy_t budget_policy,
+		budget_signal_policy_t budget_signal_policy,
+		int set_cpu_set);
 
 /* times are given in ns */
 int sporadic_task_ns(
 		lt_t e, lt_t p, lt_t phase,
 		int cpu, task_class_t cls,
-		budget_policy_t budget_policy, int set_cpu_set);
+		budget_policy_t budget_policy,
+		budget_signal_policy_t budget_signal_policy,
+		int set_cpu_set);
 
 /* budget enforcement off by default in these macros */
 #define sporadic_global(e, p) \
-	sporadic_task(e, p, 0, 0, RT_CLASS_SOFT, NO_ENFORCEMENT, 0)
+	sporadic_task(e, p, 0, 0, RT_CLASS_SOFT, NO_ENFORCEMENT, NO_SIGNALS, 0)
 #define sporadic_partitioned(e, p, cpu) \
-	sporadic_task(e, p, 0, cpu, RT_CLASS_SOFT, NO_ENFORCEMENT, 1)
+	sporadic_task(e, p, 0, cpu, RT_CLASS_SOFT, NO_ENFORCEMENT, NO_SIGNALS, 1)
 
 /* file descriptor attached shared objects support */
 typedef enum  {
@@ -162,20 +166,27 @@ void unblock_litmus_signals(unsigned long litmus_sig_mask);
 
 #define SIG_BUDGET_MASK			0x00000001
 /* more ... */
-#define ALL_LITMUS_SIGS_MASK	(SIG_BUDGET_MASK)
+
+#define ALL_LITMUS_SIG_MASKS	(SIG_BUDGET_MASK)
+
 
 #define LITMUS_TRY \
 do { \
+	int sigsetjmp_ret_##__FUNCTION__##__LINE__; \
 	litmus_sigjmp_t lit_env_##__FUNCTION__##__LINE__; \
 	push_sigjmp(&lit_env_##__FUNCTION__##__LINE__); \
-	switch( sigsetjmp(lit_env_##__FUNCTION__##__LINE__.env, 1) ) { \
-		case 0:
+	sigsetjmp_ret_##__FUNCTION__##__LINE__ = \
+		sigsetjmp(lit_env_##__FUNCTION__##__LINE__.env, 1); \
+	if (sigsetjmp_ret_##__FUNCTION__##__LINE__ == 0) {
 
-#define LITMUS_CATCH(x) break; case (x):
+#define LITMUS_CATCH(x) \
+	} else if (sigsetjmp_ret_##__FUNCTION__##__LINE__ == (x)) {
 
 #define END_LITMUS_TRY \
-	} /* end switch */ \
-}
+	} /* end if-else-if chain */ \
+} while(0); /* end do from 'LITMUS_TRY' */
+
+void longjmp_on_litmus_signal(int signum);
 
 #ifdef __cplusplus
 }
