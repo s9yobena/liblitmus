@@ -67,7 +67,7 @@ static void get_exec_times(const char *file, const int column,
 		bail_out("rewinding file failed");
 
 	/* allocate space for exec times */
-	*exec_times = calloc(*num_jobs, sizeof(*exec_times));
+	*exec_times = (double*)calloc(*num_jobs, sizeof(*exec_times));
 	if (!*exec_times)
 		bail_out("couldn't allocate memory");
 
@@ -161,7 +161,7 @@ static int job(double exec_time, double program_end)
 			loop_for(exec_time, program_end + 1);
 		}
 		LITMUS_CATCH(SIG_BUDGET) {
-			printf("Exhausted budget! Finishing job NOW!\n");
+			fprintf(stdout, "Exhausted budget! Finishing job NOW!\n");
 		}
 		END_LITMUS_TRY;
 	}
@@ -193,7 +193,7 @@ int main(int argc, char** argv)
 	double duration = 0, start;
 	double *exec_times = NULL;
 	double scale = 1.0;
-	task_class_t class = RT_CLASS_HARD;
+	task_class_t rt_class = RT_CLASS_HARD;
 	int cur_job, num_jobs;
 
 	progname = argv[0];
@@ -208,8 +208,8 @@ int main(int argc, char** argv)
 			migrate = 1;
 			break;
 		case 'c':
-			class = str2class(optarg);
-			if (class == -1)
+			rt_class = str2class(optarg);
+			if (rt_class == -1)
 				usage("Unknown task class.");
 			break;
 		case 'e':
@@ -290,7 +290,7 @@ int main(int argc, char** argv)
 			bail_out("could not migrate to target partition");
 	}
 
-	ret = sporadic_task_ns(wcet, period, 0, cpu, class,
+	ret = sporadic_task_ns(wcet, period, 0, cpu, rt_class,
 			       want_enforcement ? PRECISE_ENFORCEMENT
 			                        : NO_ENFORCEMENT,
 				   want_signals ? PRECISE_SIGNALS
@@ -303,7 +303,7 @@ int main(int argc, char** argv)
 
 	if (want_signals) {
 		/* bind default longjmp signal handler to SIG_BUDGET. */
-		activate_litmus_signals(SIG_BUDGET_MASK, longjmp_on_litmus_signal); 
+		activate_litmus_signals(SIG_BUDGET_MASK, longjmp_on_litmus_signal);
 	}
 
 	ret = task_mode(LITMUS_RT_TASK);
@@ -327,7 +327,10 @@ int main(int argc, char** argv)
 		}
 	} else {
 		/* conver to seconds and scale */
-		while (job(wcet_ms * 0.001 * scale, start + duration));
+		int run = 1;
+		while (run) {
+			run = job(wcet_ms * 0.001 * scale, start + duration);
+		}
 	}
 
 	ret = task_mode(BACKGROUND_TASK);

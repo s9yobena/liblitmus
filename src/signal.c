@@ -4,26 +4,13 @@
 #include "litmus.h"
 #include "internal.h"
 
+/* setjmp calls are stored on a singlely link list,
+ * one stack per thread.
+ */
 static __thread litmus_sigjmp_t *g_sigjmp_tail = 0;
-
-void throw_litmus_signal(int signum)
-{
-	litmus_sigjmp_t *lit_env;
-
-	printf("WE GET SIGNAL!\n");
-	lit_env = pop_sigjmp();
-	if (lit_env) {
-		printf("received signal %d!\n", signum);
-		siglongjmp(lit_env->env, signum);
-	}
-	else {
-		/* silently ignore the signal. */
-	}
-}
 
 void push_sigjmp(litmus_sigjmp_t *buf)
 {
-	printf("push\n");
 	buf->prev = g_sigjmp_tail;
 	g_sigjmp_tail = buf;
 }
@@ -31,7 +18,6 @@ void push_sigjmp(litmus_sigjmp_t *buf)
 litmus_sigjmp_t* pop_sigjmp(void)
 {
 	litmus_sigjmp_t* ret;
-	printf("pop\n");
 	ret = g_sigjmp_tail;
 	g_sigjmp_tail = (ret) ? ret->prev : NULL;
 	return ret;
@@ -46,7 +32,7 @@ static void reg_litmus_signals(unsigned long litmus_sig_mask,
 		ret = sigaction(SIG_BUDGET, pAction, NULL);
 		check("SIG_BUDGET");
 	}
-	/* more ... */
+	/* more signals ... */
 }
 
 void ignore_litmus_signals(unsigned long litmus_sig_mask)
@@ -84,7 +70,7 @@ void block_litmus_signals(unsigned long litmus_sig_mask)
 	if (litmus_sig_mask | SIG_BUDGET_MASK) {
 		sigaddset(&sigs, SIG_BUDGET);
 	}
-	/* more ... */
+	/* more signals ... */
 
 	ret = sigprocmask(SIG_BLOCK, &sigs, NULL);
 	check("SIG_BLOCK litmus signals");
@@ -108,11 +94,11 @@ void unblock_litmus_signals(unsigned long litmus_sig_mask)
 
 void longjmp_on_litmus_signal(int signum)
 {
+	/* We get signal!  Main screen turn on! */
 	litmus_sigjmp_t *lit_env;
-	printf("WE GET SIGNAL!\n");
 	lit_env = pop_sigjmp();
 	if (lit_env) {
-		printf("received signal %d\n", signum);
+		/* What you say?! */
 		siglongjmp(lit_env->env, signum); /* restores signal mask */
 	}
 	else {

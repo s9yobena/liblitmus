@@ -26,7 +26,7 @@ task_class_t str2class(const char* str)
 	else if (!strcmp(str, "be"))
 		return RT_CLASS_BEST_EFFORT;
 	else
-		return -1;
+		return (task_class_t)(-1);
 }
 
 #define NS_PER_MS 1000000

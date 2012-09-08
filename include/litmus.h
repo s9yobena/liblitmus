@@ -144,6 +144,9 @@ int null_call(cycles_t *timestamp);
  */
 struct control_page* get_ctrl_page(void);
 
+
+/* Litmus signal handling */
+
 typedef struct litmus_sigjmp
 {
 	sigjmp_buf env;
@@ -156,12 +159,26 @@ litmus_sigjmp_t* pop_sigjmp(void);
 typedef void (*litmus_sig_handler_t)(int);
 typedef void (*litmus_sig_actions_t)(int, siginfo_t *, void *);
 
+/* ignore specified signals. all signals raised while ignored are dropped */
 void ignore_litmus_signals(unsigned long litmus_sig_mask);
+
+/* register a handler for the given set of litmus signals */
 void activate_litmus_signals(unsigned long litmus_sig_mask,
 				litmus_sig_handler_t handler);
+
+/* register an action signal handler for a given set of signals */
 void activate_litmus_signal_actions(unsigned long litmus_sig_mask,
 				litmus_sig_actions_t handler);
+
+/* Block a given set of litmus signals. Any signals raised while blocked
+ * are queued and delivered after unblocking. Call ignore_litmus_signals()
+ * before unblocking if you wish to discard these. Blocking may be
+ * useful to protect COTS code in Litmus that may not be able to deal
+ * with exception-raising signals.
+ */
 void block_litmus_signals(unsigned long litmus_sig_mask);
+
+/* Unblock a given set of litmus signals. */
 void unblock_litmus_signals(unsigned long litmus_sig_mask);
 
 #define SIG_BUDGET_MASK			0x00000001
@@ -169,7 +186,9 @@ void unblock_litmus_signals(unsigned long litmus_sig_mask);
 
 #define ALL_LITMUS_SIG_MASKS	(SIG_BUDGET_MASK)
 
-
+/* Try/Catch structures useful for implementing abortable jobs.
+ * Should only be used in legitimate cases. ;)
+ */
 #define LITMUS_TRY \
 do { \
 	int sigsetjmp_ret_##__FUNCTION__##__LINE__; \
@@ -186,6 +205,10 @@ do { \
 	} /* end if-else-if chain */ \
 } while(0); /* end do from 'LITMUS_TRY' */
 
+/* Calls siglongjmp(signum). Use with TRY/CATCH.
+ * Example:
+ *  activate_litmus_signals(SIG_BUDGET_MASK, longjmp_on_litmus_signal);
+ */
 void longjmp_on_litmus_signal(int signum);
 
 #ifdef __cplusplus
@@ -223,20 +246,20 @@ namespace litmus
 	};
 
 	/* Must compile your program with "non-call-exception". */
-	static void throw_on_litmus_signal(int signum) __used__
+	static __attribute__((used))
+	void throw_on_litmus_signal(int signum)
 	{
-		printf("WE GET SIGNAL! %d\n", signum);
 		/* We have to unblock the received signal to get more in the future
 		 * because we are not calling siglongjmp(), which normally restores
 		 * the mask for us.
 		 */
-		switch(signum)
-		{
-		case SIG_BUDGET:
+		if (SIG_BUDGET == signum) {
 			unblock_litmus_signals(SIG_BUDGET_MASK);
 			throw sigbudget();
-		default:
-			; /* silently ignore */
+		}
+		/* else if (...) */
+		else {
+			/* silently ignore */
 		}
 	}
 
