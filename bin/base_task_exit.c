@@ -23,13 +23,8 @@
  * These are only constants for convenience in this example, they can be
  * determined at run time, e.g., from command line parameters.
  */
-<<<<<<< HEAD
-#define PERIOD		100
-#define EXEC_COST	 10
-=======
 /* #define PERIOD		 2000000000 */
 /* #define EXEC_COST	 0.0000001 */
->>>>>>> Updated liblitmus to support get_max_overheads syscall
 
 /* Catch errors.
  */
@@ -47,12 +42,8 @@
  * Returns 1 -> task should exit.
  *         0 -> task should continue.
  */
-<<<<<<< HEAD
-int job(void);
-=======
 int this_rt_id;
-int job(int*,int*,int);
->>>>>>> Updated liblitmus to support get_max_overheads syscall
+int job(int*,int*,int,int);
 
 /* typically, main() does a couple of things: 
  * 	1) parse command line parameters, etc.
@@ -70,14 +61,12 @@ int job(int*,int*,int);
 int main(int argc, char** argv)
 {
 	int do_exit;
-<<<<<<< HEAD
-=======
 	int PERIOD, EXEC_COST;
+	int times_exit;
 	int sCounter;
 	int counter;
 	int pCounter;
 	int ret;
->>>>>>> Updated liblitmus to support get_max_overheads syscall
 
 	/* The task is in background mode upon startup. */		
 
@@ -85,33 +74,28 @@ int main(int argc, char** argv)
 	/*****
 	 * 1) Command line paramter parsing would be done here.
 	 */
-<<<<<<< HEAD
-
-=======
-	if (argc !=4){
+	if (argc !=5){
 	  fprintf(stderr,
-		  "Usage: base_task EXEC_COST PERIOD COUNTER \n COUNTER: print info every COUNTER times called \n");
+		  "Usage: base_task EXEC_COST PERIOD COUNTER EXIT_ \n"      \
+		  "COUNTER: print info every COUNTER times called \n" \
+		  "EXIT: exit after exit times called \n" \
+		  );
 	  exit(1);
 	}
 	EXEC_COST = atoi(argv[1]);
 	PERIOD = atoi(argv[2]);
 	sCounter = atoi(argv[3]);
->>>>>>> Updated liblitmus to support get_max_overheads syscall
+	times_exit = atoi(argv[4]);
 
        
 	/*****
 	 * 2) Work environment (e.g., global data structures, file data, etc.) would
 	 *    be setup here.
 	 */
-<<<<<<< HEAD
-
-
-=======
 	counter = 0;
 	pCounter = 0;
 
 	
->>>>>>> Updated liblitmus to support get_max_overheads syscall
 
 	/*****
 	 * 3) Setup real-time parameters. 
@@ -141,12 +125,8 @@ int main(int argc, char** argv)
 	/* The task is now executing as a real-time task if the call didn't fail. 
 	 */
 
-<<<<<<< HEAD
-
-=======
 	this_rt_id = gettid();
 	ret = wait_for_ts_release();
->>>>>>> Updated liblitmus to support get_max_overheads syscall
 
 	/*****
 	 * 5) Invoke real-time jobs.
@@ -155,11 +135,7 @@ int main(int argc, char** argv)
 		/* Wait until the next job is released. */
 		sleep_next_period();
 		/* Invoke job. */
-<<<<<<< HEAD
-		do_exit = job();		
-=======
-		do_exit = job(&counter, &pCounter, sCounter );		
->>>>>>> Updated liblitmus to support get_max_overheads syscall
+		do_exit = job(&counter, &pCounter, sCounter, times_exit);		
 	} while (!do_exit);
 
 
@@ -178,16 +154,10 @@ int main(int argc, char** argv)
 }
 
 
-<<<<<<< HEAD
-int job(void) 
-{
-	/* Do real-time calculation. */
-
-=======
 
 /* the job basically increments pCounter every time it is invoked.
  * every sCounter times, the job prints a message  */
-int job(int *counter, int *pCounter, int sCounter) 
+int job(int *counter, int *pCounter, int sCounter, int times_exit) 
 {
 	/* Do real-time calculation. */
 
@@ -198,7 +168,9 @@ int job(int *counter, int *pCounter, int sCounter)
     printf("rt_id: %d \t nbr. times called: %d \n",this_rt_id, (*counter)*sCounter );
   }
 
->>>>>>> Updated liblitmus to support get_max_overheads syscall
-	/* Don't exit. */
-	return 0;
+  /* Don't exit. */
+  if ( ((*counter)*sCounter) < times_exit )
+    return 0;
+  else
+    return 1;
 }

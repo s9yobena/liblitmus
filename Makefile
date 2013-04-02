@@ -70,8 +70,8 @@ AR  := ${CROSS_COMPILE}${AR}
 # Targets
 
 all     = lib ${rt-apps}
-rt-apps = cycles base_task rt_launch rtspin release_ts measure_syscall \
-	  base_mt_task runtests
+rt-apps = cycles base_task p_base_task blocking_base_task blocking_p_base_task base_task_exit rt_launch rtspin release_ts measure_syscall \
+	  base_mt_task runtests mytest offline_schedtest catmaxoverheads
 
 .PHONY: all lib clean dump-config TAGS tags cscope help
 
@@ -201,7 +201,19 @@ vpath %.c bin/
 
 obj-cycles = cycles.o
 
-obj-base_task = base_task.o
+obj-base_task = base_task.o 
+
+obj-p_base_task = p_base_task.o 	
+
+obj-blocking_base_task = blocking_base_task.o 	
+
+obj-blocking_p_base_task = blocking_p_base_task.o 		
+
+obj-base_task_exit = base_task_exit.o 		
+
+obj-mytest = mytest.o
+
+obj-offline_schedtest = offline_schedtest.o
 
 obj-base_mt_task = base_mt_task.o
 ldf-base_mt_task = -pthread
@@ -212,6 +224,8 @@ obj-rtspin = rtspin.o common.o
 lib-rtspin = -lrt
 
 obj-release_ts = release_ts.o
+
+obj-catmaxoverheads = catmaxoverheads.o
 
 obj-measure_syscall = null_call.o
 lib-measure_syscall = -lm
