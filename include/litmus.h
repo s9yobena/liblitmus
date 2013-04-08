@@ -131,19 +131,7 @@ static inline int open_srp_sem(int fd, int name)
 /* syscall overhead measuring */
 int null_call(cycles_t *timestamp);
 
-// maximum overheads
-struct max_overheads_t {
-	uint64_t cxs;
-	uint64_t sched;
-	uint64_t sched2;
-	uint64_t release;
-	uint64_t send_resched;
-  	uint64_t release_latency;
-	uint64_t tick;
-
-};
-
-int get_max_overheads(struct max_overheads_t*);
+int reset_max_overheads(void);
 
 /*
  * get control page:
