@@ -91,3 +91,8 @@ int reset_max_overheads(void)
 {
 	return syscall(__NR_reset_max_overheads);
 }
+
+int set_extra_cxs(struct extra_cxs_t* _set_extra_cxs)
+{
+	return syscall(__NR_set_extra_cxs, _set_extra_cxs);
+}

@@ -18,6 +18,12 @@ extern "C" {
 
 typedef int pid_t;	 /* PID of a task */
 
+struct extra_cxs_t {
+	int do_extra_cxs;
+	unsigned int init_extra_cxs;
+	unsigned int step_extra_cxs;
+};
+
 /* obtain the PID of a thread */
 pid_t gettid(void);
 
@@ -132,6 +138,7 @@ static inline int open_srp_sem(int fd, int name)
 int null_call(cycles_t *timestamp);
 
 int reset_max_overheads(void);
+int set_extra_cxs(struct extra_cxs_t*);
 
 /*
  * get control page:
