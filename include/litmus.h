@@ -20,6 +20,7 @@ typedef int pid_t;	 /* PID of a task */
 
 struct extra_cxs_t {
 	int do_extra_cxs;
+	int extra_cxs_cpu;
 	unsigned int init_extra_cxs;
 	unsigned int step_extra_cxs;
 };
